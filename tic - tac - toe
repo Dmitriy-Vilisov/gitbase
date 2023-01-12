@@ -29,6 +29,77 @@ def start():    # БЛОК ВВОДА стартовой информации
     return main(mode)
 
 
+# БЛОК ВЫБОРА НАСТРОЕК игры
+def main(mode):
+    board = list(range(1, 10))
+    if mode == 2:
+        return pvp_for_xo(board)
+    else:
+        return pve_for_xo(board)
+
+
+# БЛОК УПРАВЛЕНИЯ игрой с человеком
+def pvp_for_xo(board):
+    _counter = 0
+    win = False
+    while not win:
+        outline(board)
+        if _counter % 2 == 0:
+            play_mark("X", board)
+        else:
+            play_mark("O", board)
+        _counter += 1
+        if _counter > 4:
+            tmp = check_win(board)
+            if tmp:
+                print(tmp, "выиграл!")
+                break
+        if _counter == 9:
+            print("Ничья!")
+            break
+    return new_game()
+
+
+# БЛОК УПРАВЛЕНИЯ игрой с компьютером
+def pve_for_xo(board):
+    _counter = 0
+    win = False
+    while True:
+        pl_xo = input(f"Выберите:\n1. крестик\n2. нолик")
+        try:
+            pl_xo = int(pl_xo)
+        except ValueError:
+            print("Некорректный ввод. Повторите пожалуйста")
+            continue
+        pl_xo = int(pl_xo) - 1
+        if pl_xo > 1 or pl_xo < -1:
+            print('Некорректный ввод. Повторите пожалуйста')
+            continue
+        break
+    while not win:
+        outline(board)
+        if pl_xo == 0:
+            if _counter % 2 == 0:  # если человек выбрал Х и ход четный(+ нулевой)
+                play_mark("X", board)   # то человек ставит Х
+            else:
+                ai_xo(board, "X")  # ход AI(O)
+        else:
+            if _counter % 2 == 0:  # если человек выбрал 0 и ход нечетный
+                ai_xo(board, "O")  # ход AI(X)
+            else:
+                play_mark("O", board)  # иначе ходит компьютер
+        _counter += 1
+        if _counter > 4:
+            tmp = check_win(board)
+            if tmp:
+                print(tmp, "выиграл!")
+                break
+        if _counter == 9:
+            print("Ничья!")
+            break
+    return new_game()
+
+
 # БЛОК ОТРИСОВКИ игровой матрицы и оформления
 def outline(board):
     if len(board) == 9:
@@ -118,77 +189,6 @@ def check_win(board):
         if board[combination[0]] == board[combination[1]] == board[combination[2]]:
             return board[combination[0]]
     return False
-
-
-# БЛОК ВЫБОРА НАСТРОЕК игры
-def main(mode):
-    board = list(range(1, 10))
-    if mode == 2:
-        return pvp_for_xo(board)
-    else:
-        return pve_for_xo(board)
-
-
-# БЛОК УПРАВЛЕНИЯ игрой с человеком
-def pvp_for_xo(board):
-    _counter = 0
-    win = False
-    while not win:
-        outline(board)
-        if _counter % 2 == 0:
-            play_mark("X", board)
-        else:
-            play_mark("O", board)
-        _counter += 1
-        if _counter > 4:
-            tmp = check_win(board)
-            if tmp:
-                print(tmp, "выиграл!")
-                break
-        if _counter == 9:
-            print("Ничья!")
-            break
-    return new_game()
-
-
-# БЛОК УПРАВЛЕНИЯ игрой с компьютером
-def pve_for_xo(board):
-    _counter = 0
-    win = False
-    while True:
-        pl_xo = input(f"Выберите:\n1. крестик\n2. нолик")
-        try:
-            pl_xo = int(pl_xo)
-        except ValueError:
-            print("Некорректный ввод. Повторите пожалуйста")
-            continue
-        pl_xo = int(pl_xo) - 1
-        if pl_xo > 1 or pl_xo < -1:
-            print('Некорректный ввод. Повторите пожалуйста')
-            continue
-        break
-    while not win:
-        outline(board)
-        if pl_xo == 0:
-            if _counter % 2 == 0:  # если человек выбрал Х и ход четный(+ нулевой)
-                play_mark("X", board)   # то человек ставит Х
-            else:
-                ai_xo(board, "X")  # ход AI(O)
-        else:
-            if _counter % 2 == 0:  # если человек выбрал 0 и ход нечетный
-                ai_xo(board, "O")  # ход AI(X)
-            else:
-                play_mark("O", board)  # иначе ходит компьютер
-        _counter += 1
-        if _counter > 4:
-            tmp = check_win(board)
-            if tmp:
-                print(tmp, "выиграл!")
-                break
-        if _counter == 9:
-            print("Ничья!")
-            break
-    return new_game()
 
 
 def new_game():
