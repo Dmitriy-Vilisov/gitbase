@@ -82,12 +82,12 @@ def pve_for_xo(board):
             if _counter % 2 == 0:  # если человек выбрал Х и ход четный(+ нулевой)
                 play_mark("X", board)   # то человек ставит Х
             else:
-                ai_xo(board, "X")  # ход AI(O)
+                ai_xo(board, "X")  # В Блок вычисления хода Ai передается "X"
         else:
             if _counter % 2 == 0:  # если человек выбрал 0 и ход нечетный
                 ai_xo(board, "O")  # ход AI(X)
             else:
-                play_mark("O", board)  # иначе ходит компьютер
+                play_mark("O", board)  # иначе ходит человек
         _counter += 1
         if _counter > 4:
             tmp = check_win(board)
@@ -141,7 +141,7 @@ def ai_xo(board, pl_xo):   # X_or_O = X => Ai = O
     vertical = perception.copy()
     # Формируем список позиций, в которых Ai должен сделать вынужденный ход(X,X,О! - защита; O,O,О! - победа)
     # [[123],[..][..]], если есть pl_xo вместо числа -- удаляем. Оцениваем по длине списка и кол-вy знаков AI
-    horizontal_ = [[f for f in element if f != pl_xo] for i, element in enumerate(horizontal)]      # [[...],[...],....]
+    horizontal_ = [[f for f in element if f != pl_xo] for i, element in enumerate(horizontal)]  # [[.],[.],[.],[.].... ]
     vertical_ = [list(reversed(col)) for col in zip(*vertical)]           # Источник № 2. Поворот матрицы на 90 градусов
     vertical_ = [[f for f in element if f != pl_xo] for i, element in enumerate(vertical_)]  # -//-
     diagonal_board = [board[0], board[4], board[8], board[2], board[4], board[6]]  # создаем 2 подсписка для диагоналей
@@ -177,7 +177,7 @@ def ai_xo(board, pl_xo):   # X_or_O = X => Ai = O
         remains = [[f for f in element if f != "X" if f != "O"] for i, element in enumerate(perception)]
         if len(remains[0] + remains[1] + remains[2]) == 9:
             mark = [random.choice(random.choice(diagonal)), ai_sim]  # AI в первый ход эффективнее сходить в любую
-        else:                                                                                      # позицию диагоналей
+        else:                                                                               # позицию на диагоналях
             mark = [random.choice(remains[0] + remains[1] + remains[2]), ai_sim]  # ходим в любое поле из оставшихся
         return play_mark(mark, board)
 
