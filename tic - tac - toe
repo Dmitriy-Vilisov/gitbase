@@ -135,7 +135,7 @@ def play_mark(mark, board):
 
 
 # БЛОК ВЫЧИСЛЕНИЯ ХОДА Ai
-def ai_xo(board, pl_xo):   # X_or_O = X => Ai = O
+def ai_xo(board, pl_xo):   # pl_xo = X => Ai = O
     perception = [board[i:i + 3] for i in range(0, len(board), 3)]
     horizontal = perception.copy()
     vertical = perception.copy()
