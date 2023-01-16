@@ -1,6 +1,9 @@
 import random
 
 
+x_o_score = [0, 0]  # счёт непрерывной игры 
+
+
 # БЛОК ПРИВЕТСТВИЯ игрока(ов)
 def introduction(func):
     def wrapper():
@@ -12,7 +15,7 @@ def introduction(func):
 
 
 @introduction
-def start():    # БЛОК ВВОДА стартовой информации
+def start():  # БЛОК ВВОДА стартовой информации
     while True:
         print("Какой режим выберете?")
         mode = input(f"\n1. Игра против суперинтелекта\n2. Игра против человека\n")
@@ -26,7 +29,7 @@ def start():    # БЛОК ВВОДА стартовой информации
             print("Некорректный ввод. Повторите пожалуйста")
             continue
         break
-    return main(mode)
+    return main(mode, )
 
 
 # БЛОК ВЫБОРА НАСТРОЕК игры
@@ -38,9 +41,13 @@ def main(mode):
         return pve_for_xo(board)
 
 
+'''В будущем хотел бы сделать помимо выбора режима - выбор игры. Например Гомоку(15*15), в связи с этим функция       
+main(), сейчас имеет такой не внушительный функционал.'''
+
+
 # БЛОК УПРАВЛЕНИЯ игрой с человеком
 def pvp_for_xo(board):
-    _counter = 0
+    _counter = 0  # Счетчик ходов
     win = False
     while not win:
         outline(board)
@@ -50,9 +57,9 @@ def pvp_for_xo(board):
             play_mark("O", board)
         _counter += 1
         if _counter > 4:
-            tmp = check_win(board)
-            if tmp:
-                print(tmp, "выиграл!")
+            _tmp = check_win(board)
+            if _tmp:
+                print(_tmp, "выиграл!")
                 break
         if _counter == 9:
             print("Ничья!")
@@ -62,10 +69,10 @@ def pvp_for_xo(board):
 
 # БЛОК УПРАВЛЕНИЯ игрой с компьютером
 def pve_for_xo(board):
-    _counter = 0
+    _counter = 0  # Счетчик ходов
     win = False
     while True:
-        pl_xo = input(f"Выберите:\n1. крестик\n2. нолик")
+        pl_xo = input(f"Выберите:\n1. Крестик\n2. Нолик")
         try:
             pl_xo = int(pl_xo)
         except ValueError:
@@ -80,19 +87,21 @@ def pve_for_xo(board):
         outline(board)
         if pl_xo == 0:
             if _counter % 2 == 0:  # если человек выбрал Х и ход четный(+ нулевой)
-                play_mark("X", board)   # то человек ставит Х
+                play_mark("X", board)
             else:
-                ai_xo(board, "X")  # В Блок вычисления хода Ai передается "X"
+                ai_xo(board, "X")  # В Блок вычисления хода Ai передается "X". Символ используется блоком.
         else:
-            if _counter % 2 == 0:  # если человек выбрал 0 и ход нечетный
-                ai_xo(board, "O")  # ход AI(X)
+            if _counter % 2 == 0:  # если человек выбрал 0 и ход четный -- ходит Ai
+                ai_xo(board, "O")  # В Блок вычисления хода Ai передается "O".
             else:
-                play_mark("O", board)  # иначе ходит человек
+                play_mark("O", board)  # Если человек выбрал "O" и ход нечетный -- его очередь.
         _counter += 1
         if _counter > 4:
-            tmp = check_win(board)
-            if tmp:
-                print(tmp, "выиграл!")
+            _tmp = check_win(board)
+            if _tmp:
+                score(_tmp)
+                print(_tmp, "выиграл!")
+
                 break
         if _counter == 9:
             print("Ничья!")
@@ -105,7 +114,7 @@ def outline(board):
     if len(board) == 9:
         print("-" * 13)
         for i in range(3):
-            print("]", board[0+i*3], "|", board[1+i*3], "|", board[2+i*3], "[")
+            print("]", board[0 + i * 3], "|", board[1 + i * 3], "|", board[2 + i * 3], "[")
         print("-" * 13)
 
 
@@ -126,7 +135,7 @@ def play_mark(mark, board):
         answer = int(answer)
         if 1 <= answer <= 9:
             if str(board[answer - 1]) not in "XO":
-                board[answer-1] = mark
+                board[answer - 1] = mark
                 _choice = True
             else:
                 print("Клетка занята")
@@ -135,14 +144,14 @@ def play_mark(mark, board):
 
 
 # БЛОК ВЫЧИСЛЕНИЯ ХОДА Ai
-def ai_xo(board, pl_xo):   # pl_xo = X => Ai = O
+def ai_xo(board, pl_xo):  # pl_xo = X => Ai = O
     perception = [board[i:i + 3] for i in range(0, len(board), 3)]
     horizontal = perception.copy()
     vertical = perception.copy()
     # Формируем список позиций, в которых Ai должен сделать вынужденный ход(X,X,О! - защита; O,O,О! - победа)
     # [[123],[..][..]], если есть pl_xo вместо числа -- удаляем. Оцениваем по длине списка и кол-вy знаков AI
     horizontal_ = [[f for f in element if f != pl_xo] for i, element in enumerate(horizontal)]  # [[.],[.],[.],[.].... ]
-    vertical_ = [list(reversed(col)) for col in zip(*vertical)]           # Источник № 2. Поворот матрицы на 90 градусов
+    vertical_ = [list(reversed(col)) for col in zip(*vertical)]  # Источник № 2. Поворот матрицы на 90 градусов
     vertical_ = [[f for f in element if f != pl_xo] for i, element in enumerate(vertical_)]  # -//-
     diagonal_board = [board[0], board[4], board[8], board[2], board[4], board[6]]  # создаем 2 подсписка для диагоналей
     perception_diagonal = [diagonal_board[i:i + 3] for i in range(0, len(diagonal_board), 3)]
@@ -150,34 +159,34 @@ def ai_xo(board, pl_xo):   # pl_xo = X => Ai = O
     diagonal_ = diagonal.copy()
     positions = horizontal_ + vertical_ + diagonal_  # объединяем в базу все возможные варианты
     if pl_xo == "X":  # выбор человека
-        ai_sim = "O"
+        ai_sim = "O"  # символ Ai
     else:
         ai_sim = "X"
     for cell in positions:
         if (cell.count(ai_sim) == 2) and (len(cell) == 3):
-            cell.remove(ai_sim)             # Победа в приоритете. Если ход и 2 символа наши, то ставим третий
+            cell.remove(ai_sim)  # Победа в приоритете. Если ход и 2 символа Ai, то он ставит третий
             cell.remove(ai_sim)
             mark = [cell[0], ai_sim]
             return play_mark(mark, board)
-    for cell in positions:   # тк символы противника удаляются, если длина ряда = 1, но это не наш, то защищаемся
+    for cell in positions:  # тк символы противника удаляются, если длина ряда = 1, но это не ai_sim, то защищается
         if (len(cell) == 1) and (ai_sim not in cell):
             mark = [cell[0], ai_sim]
             return play_mark(mark, board)
-    count = []
-    for cell in positions:  # смотрим куда сходил человек, складируем ряды, будем бить в один из них
-        if len(cell) == 2 and (ai_sim not in cell):  # Исключаем ряды где есть и "Х", и "О" ['X', 'O', 4].
+    count = []  # хранилище рядов
+    for cell in positions:  # смотрит куда сходил человек, складирует ряды, будет бить в один из них
+        if len(cell) == 2 and (ai_sim not in cell):  # Исключает ряды где есть и "Х", и "О" ['X', 'O', 4].
             count.append(cell)
-    if (count != []) and (str(perception[1][1]) not in "XO"):  # если ходит второй, обязательный ход
-        mark = [perception[1][1], ai_sim]                          # в центр иначе проигрыш при правильной игре человека
+    if (count != []) and (str(perception[1][1]) not in "XO"):  # если Ai ходит второй, обязательный ход в центр
+        mark = [perception[1][1], ai_sim]                      # иначе проигрыш при правильной игре человека
         return play_mark(mark, board)
-    if count:  # если вынужденных ходов нет, и хранилище не пустое, тогда мешаем ему
+    if count:  # если вынужденных ходов нет, и хранилище не пустое, тогда мешаем человеку
         mark = [random.choice(random.choice(count)), ai_sim]  # берем рандомный ряд и не занятую позицию
         return play_mark(mark, board)
     if not count:  # Remains(остаток) отслеживает сколько чисел в поле. Хранилище пустое при 1 ходе и при явной ничье.
         remains = [[f for f in element if f != "X" if f != "O"] for i, element in enumerate(perception)]
         if len(remains[0] + remains[1] + remains[2]) == 9:
             mark = [random.choice(random.choice(diagonal)), ai_sim]  # AI в первый ход эффективнее сходить в любую
-        else:                                                                               # позицию на диагоналях
+        else:                                                        # позицию на диагоналях
             mark = [random.choice(remains[0] + remains[1] + remains[2]), ai_sim]  # ходим в любое поле из оставшихся
         return play_mark(mark, board)
 
@@ -187,10 +196,20 @@ def check_win(board):
     victory_condition = ((0, 1, 2), (3, 4, 5), (6, 7, 8), (0, 3, 6), (1, 4, 7), (2, 5, 8), (0, 4, 8), (2, 4, 6))
     for combination in victory_condition:
         if board[combination[0]] == board[combination[1]] == board[combination[2]]:
-            return board[combination[0]]
+            return board[combination[0]]  # победителя определим например по первому символу ряда
     return False
 
 
+# БЛОК ПОДСЧЕТА ОЧКОВ
+def score(_tmp):
+    if _tmp == 'X':
+        x_o_score[0] += 1
+    else:
+        x_o_score[1] += 1
+    print(f'X vs O is {x_o_score[0]}:{x_o_score[1]}')
+
+
+# БЛОК ВЫБОРА финального действия
 def new_game():
     while True:
         restart = input("1. Новая игра\n2. Выход из игры")
@@ -205,6 +224,7 @@ def new_game():
             continue
         break
     if restart == 1:
+
         return start()
     else:
         print("Завершение работы...")
