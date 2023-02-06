@@ -1,0 +1,395 @@
+import random
+from random import randint
+
+
+class Dot:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def __eq__(self, other):  # Возможность сравнивать объекты. Точки с равными координатами теперь сравнимы
+        return self.x == other.x and self.y == other.y
+
+    def __repr__(self):
+        return f"({self.x}, {self.y})"
+
+
+class BoardException(Exception):
+    pass
+
+
+class BoardOutException(BoardException):
+    def __str__(self):
+        return "Вы пытаетесь выстрелить за доску!"
+
+
+class BoardUsedException(BoardException):
+    def __str__(self):
+        return "Вы не можете стрелять в свой корабль!"
+
+
+class BoardWrongShipException(BoardException):
+    pass
+
+
+class Ship:
+    def __init__(self, bow, lens, o):
+        self.bow = bow          # Нос корабля, 2 координаты
+        self.lens = lens        # Длина корабля
+        self.o = o              # Ориентация корабля
+        self.lives = 2 * lens   # Количество жизней корабля
+
+    @property  # Метод вычисляющий свойство
+    def dots_pl(self):
+        ship_dots_pl = []           # Точки корабля игрока
+        for i in range(self.lens):
+            cur_x = self.bow.x      # Координаты носа
+            cur_y = self.bow.y
+            if self.lens - 5 <= 0:  # pl
+                if self.o == 0:     # pl
+                    cur_x += i      # pl
+                elif self.o == 1:   # pl
+                    cur_y += i      # pl
+                ship_dots_pl.append(Dot(cur_x, cur_y))
+        return ship_dots_pl
+
+    @property  # Метод вычисляющий свойство
+    def dots_ai(self):
+        ship_dots_ai = []    # точки корабля alien
+        cur_x = self.bow.x   # Координаты носа
+        cur_y = self.bow.y
+        if self.lens % 3 == 0:
+            scale = [range(int(self.lens / 3)), range(int(self.lens / 3)), range(int(self.lens / 3))]
+            if self.o == 0:
+                for m, n in enumerate(scale):
+                    for k in n:
+                        ship_dots_ai.append(Dot(cur_x + m, cur_y + k))
+            else:
+                for m, n in enumerate(scale):
+                    for k in n:
+                        ship_dots_ai.append(Dot(cur_x + k, cur_y + m))
+        return ship_dots_ai
+
+    def shot_in_missouri(self, shot_pl):  # Показывает попадание в корабль
+        return shot_pl in self.dots_pl
+
+    def shot_in_alien(self, shot_ai):
+        return shot_ai in self.dots_ai
+
+
+# Блок игрового поля
+class Board:
+    def __init__(self, hid=False, size=5):
+        self.near = None
+        self.size = size    # Константа размера
+        self.hid = hid      # Скрыть или показать корабль противника. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
+        self.count = []      # Количество поврежденных кораблей
+        self.field = [list(map(str, range(1, 81))) for _ in range(15)]
+        self.busy_pl = []   # Хранятся занятые точки кораблями pl
+        self.busy_ai = []   # Хранятся занятые точки корабля ai
+        self.ships_pl = []  # Список кораблей доски, все их доты здесь
+        self.ships_ai = []
+
+    def add_ship_pl(self, ship):  # размещение корабля
+        for d in ship.dots_pl:
+            if self.out(d) or d in self.busy_pl:
+                raise BoardWrongShipException()
+        for d in ship.dots_pl:    # Проходится по дотам, отмечает их
+            if d in ship.dots_pl:
+                if int(d.y) < 9:
+                    self.field[d.x][d.y] = "■"
+                else:
+                    self.field[d.x][d.y] = "■■"
+                self.busy_pl.append(d)  # Точки, где корабль, + соседствующие
+        self.ships_pl.append(ship)
+        self.contour_pl(ship)
+
+    def add_ship_ai(self, ship):  # Размещение корабля alien
+        for d in ship.dots_ai:
+            if self.out(d) or d in self.busy_ai:
+                raise BoardWrongShipException()
+        for d in ship.dots_ai:  # Проходится по дотам, отмечает их
+            if d in ship.dots_ai:
+                if self.hid:
+                    if int(d.y) < 9:
+                        self.field[d.x][d.y] = "■"
+                    else:
+                        self.field[d.x][d.y] = "■■"
+                self.busy_ai.append(d)  # Точки, где корабль, + соседствующие'''
+        self.ships_ai.append(ship)  # Добавляем в список собственных кораблей
+        self.contour_ai(ship)       # Обводим по контуру
+
+    @staticmethod
+    def near_radius(r):
+        near = [
+            (-r, -r), (-r, 0), (-r, r),
+            (0, -r), (0, 0), (0, r),
+            (r, -r), (r, 0), (r, r)
+        ]  # Готовим шаблон для отображения контура кораблей разного радиуса
+        return near
+
+    def contour_pl(self, ship, verb=True, r=1):   # Точки соседствующие с кораблем
+        for d in ship.dots_pl:
+            for dx, dy in self.near_radius(r):    # Ищем все точки соседствующие с кораблем
+                cur = Dot(d.x + dx, d.y + dy)
+                if not (self.out(cur)) and cur not in self.busy_pl:  # Не выходит за гр.+не занята!!!!!!!!!!!!
+                    if verb:                      # Нужно ли ставить точки вокруг кораблей
+                        if cur.y < 9:
+                            con = '◯'
+                        else:
+                            con = '◯◯'
+                        self.field[cur.x][cur.y] = con
+                    self.busy_pl.append(cur)  # Добавляем в список занятых
+
+    def contour_ai(self, ship):  # Точки соседствующие с кораблем
+        symbol_1 = '⚠'
+        low = 5   # Делитель вероятности срабатывания буя на дистанции 1 клетка
+        symbol_2 = '@'
+        long = 8  # Делитель вероятности срабатывания буя на дистанции 2 клетки. Больше так как много кандидатов
+        send = (1, symbol_1, low), (2, symbol_2, long)
+        for i in send:
+            r = i[0]
+            for d in ship.dots_ai:
+                for dx, dy in self.near_radius(r):  # Ищем все точки соседствующие с кораблем
+                    cur = Dot(d.x + dx, d.y + dy)
+                    if not (self.out(cur)) and cur not in self.busy_ai:  # Не выходит за гр.+не занята
+                        self.busy_ai.append(cur)  # Добавляем в список занятых
+                        verb = randint(1, 2 * i[2])
+                        if verb == 5:  # Вероятность выставления точки-буя 1 к 10 для 1 ряда и 1 к 16 для второго
+                            if cur.y < 9:  # Корректировка отображения на карте
+                                con = i[1]
+                            else:
+                                con = i[1] * 2
+                            self.field[cur.x][cur.y] = con
+
+    def __str__(self):
+        res = ""  # Записывается наша доска
+        res += "X ↓   Y ⇛ __" + "___" * 75
+        for i, row in enumerate(self.field):
+            if i < 9:
+                res += f"\n{i + 1}   |" + "|".join(row) + "|" + f"  {i + 1}"
+            else:
+                res += f"\n{i + 1}  |" + "|".join(row) + "|" + f" {i + 1}"
+        return res
+
+    def out(self, d):  # Находится ли точка на доске. Если выходит -- отрицание условия
+        return not (0 < d.x < (self.size * 3) and (0 < d.y < (self.size * 16)))
+
+    def shot_pl(self, d):           # Делаем выстрел в AI, ship.lives - жизнь его корабля
+        if self.out(d):
+            raise BoardOutException()
+        for ship in self.ships_pl:  # Определяем принадлежит ли точка какому-то кораблю
+            if d in ship.dots_pl:
+                raise BoardUsedException()  # Проверяем не в свой ли корабль сделан наш выстрел
+        for ship in self.ships_ai:          # Определяем принадлежит ли точка какому-то кораблю
+            if d in ship.dots_ai:           # Если выстрел с учетом поправки пришелся на дот:
+                return self.entry(d, ship)
+            return self.miss(d)
+
+    def shot_ai(self, d):
+        if self.out(d):
+            raise BoardOutException()
+
+        for ship in self.ships_pl:  # Определяем принадлежит ли точка какому -- то кораблю
+            if d in ship.dots_pl:   # Если выстрел с учетом поправки пришелся на дот:
+                return self.entry(d, ship)
+            return self.miss(d)
+
+    def entry(self, d, ship):
+        ship.lives -= 1
+        if len(self.count) == 1:
+            a = self.count.pop()
+            self.field[a.x][a.y] = str(a.y)
+        extinguishing = d   # Пожаров отображено будет максимум 2. Тушатся
+        self.count.append(extinguishing)  # Добавляем в счетчик очагов возгорания
+        self.field[d.x][d.y] = "♨"
+        print(f"Запас прочности корабля составляет: {'|■'*ship.lives}|")
+        if ship.lives == 0:  # Проверяем уничтожен ли корабль
+            self.contour(ship, verb=True)  # ставим True - обозначаем контур корабля
+            print("Корабль уничтожен!")
+            return False
+        else:
+            print("Корабль ранен!")
+            return True  # Не используется, так как дополнительный ход за подбитие не предусмотрен
+
+    def miss(self, d):
+        if d.y <= 9:     # Если выстрел не попал в корабль:
+            _sim = '◯'
+        else:
+            _sim = '◯◯'
+        self.field[d.x][d.y] = _sim  # Если никаких повреждений нет, говорим что стрельнули мимо
+        print("Мимо!")
+        return False
+
+    def begin(self):       # В момент начала игры список занятых точек обнуляется
+        self.busy_pl = []  # В игре будем хранить в нем точки куда стрелял игрок
+        self.busy_ai = []
+
+
+class Player:
+    def __init__(self, board, ):  # 2 доски своя и противника
+        self.board = board
+
+    def ask(self):  # Не определяем, будет у потомков
+        raise NotImplementedError()
+
+    def move(self, var):  # Просим дать координаты выстрела
+        if var == 1 or var == '1':
+            self.flight(var)
+
+    def flight(self, var):
+        while True:
+            try:
+                target = self.ask()  # Просим координаты выстрела
+                if var == 1:
+                    shot = self.board.shot_ai(target)   # Выстрел от alien
+                else:
+                    shot = self.board.shot_pl(target)  # Выполняем выстрел
+                return shot
+            except BoardException as e:
+                print(e)
+
+    @property
+    def error_rate(self):
+        if self.__class__.__name__ == "User":
+            normal_distribution = [-1, 0, 0, 0, 0, 1]  # 30% шанс промазать по выбранному полю
+        else:
+            normal_distribution = [-3, -2, -1, 0, 0, 1, 2, 3]  # тип оружия -- метающие. 75% шанс промаха по точке
+        print(normal_distribution)
+        r = random.choice(normal_distribution)
+        return r
+
+
+class AI(Player):  # Дочерний класс Ai - делает выстрел с помощью библиотеки!!!!!!!!!!!1
+
+    def ask(self):
+        d = Dot(randint(0, 15) + self.error_rate, randint(0, 80) + self.error_rate)
+        print(f"Ход {self.__class__.__name__}: {d.x + 1} {d.y + 1}")
+        return d
+
+
+class User(Player):
+    def ask(self):  # Спрашиваем игрока координаты
+        while True:
+            cords = input("Ваш ход: ").split()
+
+            if len(cords) != 2:
+                print(" Введите 2 координаты! ")
+                continue
+
+            x, y = cords
+
+            if not (x.isdigit()) or not (y.isdigit()):
+                print(" Введите числа! ")
+                continue
+            x, y = int(x), int(y)
+            return Dot(x - 1 + self.error_rate, y - 1 + self.error_rate)
+
+
+class Game:
+    def __init__(self, size=5):
+        self.size = size  # Множитель размеров доски
+        self.lens = [4, 12]
+        pl = self.random_place()  # Генерируем случайные доски(по правилам)
+        self.ai = AI(pl)  # Создаем 2-х игроков
+        self.us = User(pl)
+
+    def random_place(self):
+        lens = self.lens  # Длины кораблей
+        board = Board(size=self.size)  # создадим доску
+        missouri = Ship(Dot(randint(4, 7), randint(4, 7)), lens[0], randint(0, 1))
+        board.add_ship_pl(missouri)  # Добавляем корабль на доску
+        alien = Ship(Dot(randint(4, 10), randint(70, 75)), lens[1], randint(0, 1))
+        board.add_ship_ai(alien)  # Добавляем корабль на доску
+        # board.begin()  # готовим доску к игре
+        return board   # возвращаем доску
+
+    def print_boards(self):
+        print(f"{'_' * 105}  Прибрежная зона. Туман.  {'_' * 105}")
+        print(self.us.board)
+
+    @staticmethod
+    def action_pl():
+        while True:
+            u = input('    1. Стрелять!\n 2. Совершить маневр\n')
+            try:
+                u = int(u)
+            except ValueError:
+                print("Некорректный ввод. Повторите пожалуйста")
+                continue
+            u = int(u)
+            if u > 2 or u < 1:
+                print('Некорректный ввод. Повторите пожалуйста')
+                continue
+            break
+        '''if u == '2':!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            d = 2'''
+        return u   # Игрок передает в move 1 или 2 в виде строки (ai числа)
+
+    def loop(self, ):  # Создаем игровой цикл
+        num = 1      # Номер хода
+        while True:
+            self.print_boards()
+            if num % 4 == 1 or num % 4 == 2:
+                print("-" * 20)
+                print("Ходит пользователь!")
+                print(f"Ваше {num} действие:")
+                var = self.action_pl()
+                self.us.move(var)
+            else:
+                print("-" * 20)
+                print(f"Ходит компьютер!")
+                var = 1
+                self.ai.move(var)
+                self.ai.move(var)
+                self.ai.move(var)
+                self.ai.move(var)
+                self.ai.move(var)
+                self.ai.move(var)
+            if self.ai.board.count == 7:  # Проверка, что количество пораженных кораблей = 7
+                self.print_boards()       # Выведем доску после финального выстрела
+                print("-" * 20)
+                print("Пользователь выиграл!")
+                break
+            if self.us.board.count == 7:
+                print("-" * 20)
+                print("Компьютер выиграл!")
+                break
+            num += 1
+            if num == 5:
+                num = 1
+
+    @staticmethod
+    def intro():
+        print(f"{'_' * 105}                      Введение               {'_' * 90}")
+        print(f"{' ' * 105}           Игра по мотивам одноименного фильма")
+        print(f"{' ' * 105} Вам предстоит сражаться в неравном бою с кораблем пришельцев\n")
+        print(f"{' ' * 105} ОСОБЕННОСТИ ИГРЫ:")
+        print(f"{' ' * 105} Корабли: ваше судно - корабль missouri ")
+        print(f"{' ' * 105}             4 ед. длины, 8 ед. стойкости")
+        print(f"{' ' * 105}          корабль противника - 'alien'  ")
+        print(f"{' ' * 105}             4 ед. длины, 3 ед. ширины  24 ед. стойкости")
+        _ = input(f"{'_' * 105}                   ОК!!!                     {'_' * 90}\n\n")
+        if _ or not _:
+            return
+
+    def start(self):
+        greet()  # Приветствие
+        self.intro()  # Вступление
+        # self.call_block()  # Создаем запросы на создание экземпляров карты, кораблей, вооружения
+        self.loop()  # Основной блок
+
+
+def greet():
+    print(f"{' ' * 105}                  -------------------")
+    print(f"{' ' * 105}                    Приветствуем вас  ")
+    print(f"{' ' * 105}                        в игре       ")
+    print(f"{' ' * 105}                      морской бой    ")
+    print(f"{' ' * 105}                  -------------------")
+    print(f"{' ' * 105}                   формат ввода: x y ")
+    print(f"{' ' * 105}                x - координата широты ")
+    print(f"{' ' * 105}                y - координата долготы ")
+
+
+g = Game()
+g.start()
