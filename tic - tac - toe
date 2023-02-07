@@ -43,7 +43,7 @@ def main(mode):
 
 # БЛОК УПРАВЛЕНИЯ игрой с человеком
 def pvp_for_xo(board):
-    _counter = 0  # Счетчик ходов
+    _counter = 0      # Счетчик ходов
     win = False
     while not win:
         outline(board)
@@ -65,7 +65,7 @@ def pvp_for_xo(board):
 
 # БЛОК УПРАВЛЕНИЯ игрой с компьютером
 def pve_for_xo(board):
-    _counter = 0  # Счетчик ходов
+    _counter = 0       # Счетчик ходов
     win = False
     while True:
         pl_xo = input(f"Выберите:\n1. Крестик\n2. Нолик")
@@ -82,13 +82,13 @@ def pve_for_xo(board):
     while not win:
         outline(board)
         if pl_xo == 0:
-            if _counter % 2 == 0:  # если человек выбрал Х и ход четный(+ нулевой)
+            if _counter % 2 == 0:      # если человек выбрал Х и ход четный(+ нулевой)
                 play_mark("X", board)
             else:
-                ai_xo(board, "X")  # В Блок вычисления хода Ai передается "X". Символ используется блоком.
+                ai_xo(board, "X")      # В Блок вычисления хода Ai передается "X". Символ используется блоком.
         else:
-            if _counter % 2 == 0:  # если человек выбрал 0 и ход четный -- ходит Ai
-                ai_xo(board, "O")  # В Блок вычисления хода Ai передается "O".
+            if _counter % 2 == 0:      # если человек выбрал 0 и ход четный -- ходит Ai
+                ai_xo(board, "O")      # В Блок вычисления хода Ai передается "O".
             else:
                 play_mark("O", board)  # Если человек выбрал "O" и ход нечетный -- его очередь.
         _counter += 1
@@ -154,8 +154,8 @@ def ai_xo(board, pl_xo):  # pl_xo = X => Ai = O
     diagonal = [[f for f in element if f != pl_xo] for i, element in enumerate(perception_diagonal)]
     diagonal_ = diagonal.copy()
     positions = horizontal_ + vertical_ + diagonal_  # объединяем в базу все возможные варианты
-    if pl_xo == "X":  # выбор человека
-        ai_sim = "O"  # символ Ai
+    if pl_xo == "X":  # Выбор человека
+        ai_sim = "O"  # Символ Ai
     else:
         ai_sim = "X"
     for cell in positions:
@@ -169,14 +169,14 @@ def ai_xo(board, pl_xo):  # pl_xo = X => Ai = O
             mark = [cell[0], ai_sim]
             return play_mark(mark, board)
     count = []  # хранилище рядов
-    for cell in positions:  # смотрит куда сходил человек, складирует ряды, будет бить в один из них
+    for cell in positions:             # смотрит куда сходил человек, складирует ряды, будет бить в один из них
         if len(cell) == 2 and (ai_sim not in cell):  # Исключает ряды где есть и "Х", и "О" ['X', 'O', 4].
             count.append(cell)
     if (count != []) and (str(perception[1][1]) not in "XO"):  # если Ai ходит второй, обязательный ход в центр
         mark = [perception[1][1], ai_sim]                      # иначе проигрыш при правильной игре человека
         return play_mark(mark, board)
     if count:  # если вынужденных ходов нет, и хранилище не пустое, тогда мешаем человеку
-        mark = [random.choice(random.choice(count)), ai_sim]  # берем рандомный ряд и не занятую позицию
+        mark = [random.choice(random.choice(count)), ai_sim]   # берем рандомный ряд и не занятую позицию
         return play_mark(mark, board)
     if not count:  # Remains(остаток) отслеживает сколько чисел в поле. Хранилище пустое при 1 ходе и при явной ничье.
         remains = [[f for f in element if f != "X" if f != "O"] for i, element in enumerate(perception)]
