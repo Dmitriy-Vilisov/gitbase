@@ -39,7 +39,7 @@ class Ship:
         self.o = o                   # Ориентация корабля
         self.lives = dimension       # Количество 'жизней' корабля
 
-    @property  # Свойство используемое при генерации кораблей
+    @property           # Свойство используемое при генерации кораблей
     def dots(self):
         ship_dots = []  # Складирует доты кораблей в зависимости от их ориентации и размера
         for i in range(self.dimension):
@@ -99,7 +99,7 @@ class Board:
             res = res.replace("■", "O")
         return res       # Записывается наша доска
 
-    def out(self, d):   # Находится ли точка на доске. Если выходит -- отрицание условия
+    def out(self, d):    # Находится ли точка на доске. Если выходит -- отрицание условия
         return not ((0 <= d.x < self.size) and (0 <= d.y < self.size))
 
     def shot(self, d):
@@ -119,7 +119,7 @@ class Board:
                     return False
                 else:
                     print("The ship is damaged!")
-                    return True  # Повтор хода
+                    return True     # Повтор хода
         self.field[d.x][d.y] = "."
         print("Miss!")
         return False
@@ -156,18 +156,18 @@ class Computer(Player):
 
     def flash_ship(self, repeat):
         if repeat:
-            self.search_count += 4.0  # 4 -- Накрест лежащие точки, окружающие дот, в который попали
+            self.search_count += 4.0     # 4 -- Накрест лежащие точки, окружающие дот, в который попали
 
     def ask(self):
-        if self.search_count > 4:  # Определяем ориентацию корабля, стреляем в одну '.'
+        if self.search_count > 4:        # Определяем ориентацию корабля, стреляем в одну '.'
             rx, ry = self.save_dx_dy_two[-1][0] - self.save_dx_dy[0], self.save_dx_dy_two[-1][1] - self.save_dx_dy[1]
             dot_x = self.save_dx_dy_two[-1][0] + rx  # Учтя ориентацию (rx, ry =0..1) получаем 2 точки для поиска
             dot_y = self.save_dx_dy_two[-1][1] + ry                                     # стреляем в одну
             self.save_dx_dy_three = [self.save_dx_dy[0] - rx, self.save_dx_dy[1] - ry]  # запоминаем другую
             self.save_dx_dy_two = []
-            self.save_dx_dy = []     # Готовим список к переходу на ветку else
+            self.save_dx_dy = []         # Готовим список к переходу на ветку else
             self.search_count = 0
-        elif self.save_dx_dy_three:  # Если корабль у края, или выбор не засчитывается -- стреляем в сохраненную точку
+        elif self.save_dx_dy_three:      # Если корабль у края, или выбор не засчитывается -- стреляем в сохраненную точку
             dot_x = self.save_dx_dy_three[0]
             dot_y = self.save_dx_dy_three[1]
             self.save_dx_dy_three = []   # Выстрел один, после его совершения или вызова исключения хранилище будет []
